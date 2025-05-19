@@ -23,7 +23,10 @@
           "apiKey": "AIzaSyCOtCJocRnXKgYOA1oYPMobFi1bEaQ6DSY"
         }
       },
-      "permissions": ["ACCESS_COARSE_LOCATION", "ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +47,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8021584d-78ab-408c-8c04-662a40264b17"
+      }
     }
   }
 }

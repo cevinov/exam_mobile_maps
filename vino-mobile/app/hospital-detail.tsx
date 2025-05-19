@@ -1,5 +1,8 @@
-// vino-mobile/app/hospital-detail.tsx
 import React, { useState, useEffect } from "react";
+import { useLocalSearchParams, Stack, useRouter } from "expo-router";
+import MapView, { Marker, Region } from "react-native-maps";
+import * as Location from "expo-location";
+import { VinoColors } from "../constants/Colors"; // Import VinoColors
 import {
   View,
   Text,
@@ -12,9 +15,6 @@ import {
   Alert,
   TouchableOpacity,
 } from "react-native";
-import MapView, { Marker, Region } from "react-native-maps";
-import * as Location from "expo-location";
-import { useLocalSearchParams, Stack } from "expo-router";
 
 interface Hospital {
   name: string;
@@ -25,8 +25,9 @@ interface Hospital {
 }
 
 export default function HospitalDetailScreen() {
-  const params = useLocalSearchParams<{ hospitalData: string }>(); // Typed params
+  const params = useLocalSearchParams<{ hospitalData: string }>();
   const { hospitalData } = params;
+  const router = useRouter(); // For setting title
 
   const [hospital, setHospital] = useState<Hospital | null>(null);
   const [mapRegion, setMapRegion] = useState<Region | null>(null);
@@ -38,18 +39,14 @@ export default function HospitalDetailScreen() {
       try {
         const parsedHospital: Hospital = JSON.parse(hospitalData);
         setHospital(parsedHospital);
-      } catch (e) {
-        console.error("Error parsing hospital data:", e);
-        setMapError("Failed to load hospital details.");
-      }
+      } catch (e) {}
     } else {
-      setMapError("No hospital data provided.");
     }
-  }, [hospitalData]);
+  }, [hospitalData, router]);
 
   useEffect(() => {
+    // Geocoding effect
     if (!hospital) return;
-
     const geocodeAddress = async () => {
       setLoadingMap(true);
       setMapError(null);
@@ -60,18 +57,15 @@ export default function HospitalDetailScreen() {
           setLoadingMap(false);
           return;
         }
-
         let addressToGeocode = hospital.address;
         if (hospital.region) addressToGeocode += `, ${hospital.region}`;
         if (hospital.province) addressToGeocode += `, ${hospital.province}`;
-
         let geocodedLocations: Location.LocationGeocodedLocation[] = [];
         const geocodeAttempts = [
           addressToGeocode,
           hospital.region,
           hospital.province,
         ].filter(Boolean);
-
         for (const attempt of geocodeAttempts) {
           try {
             geocodedLocations = await Location.geocodeAsync(attempt as string);
@@ -80,7 +74,6 @@ export default function HospitalDetailScreen() {
             console.log(`Geocoding attempt failed for "${attempt}":`, geoError);
           }
         }
-
         if (geocodedLocations.length > 0) {
           setMapRegion({
             latitude: geocodedLocations[0].latitude,
@@ -100,7 +93,6 @@ export default function HospitalDetailScreen() {
         setLoadingMap(false);
       }
     };
-
     geocodeAddress();
   }, [hospital]);
 
@@ -165,7 +157,7 @@ export default function HospitalDetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: hospital?.name || "Hospital Detail" }} />
+      <Stack.Screen options={{ title: hospital?.name || "Hospital Details" }} />
       <ScrollView style={styles.container}>
         {hospital && (
           <View style={styles.detailSection}>
@@ -189,17 +181,26 @@ export default function HospitalDetailScreen() {
           </View>
         )}
 
+        {/* Map Section */}
         {loadingMap && (
           <View style={styles.mapPlaceholder}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text>Loading map...</Text>
+            <ActivityIndicator size="large" color={VinoColors.primary} />
+            <Text style={{ color: VinoColors.text, marginTop: 10 }}>
+              Loading map...
+            </Text>
           </View>
         )}
         {mapError && !loadingMap && (
           <View style={styles.mapPlaceholder}>
-            <Text style={styles.errorText}>{mapError}</Text>
+            <Text style={styles.mapErrorText}>{mapError}</Text>
             {hospital && (
-              <Text>
+              <Text
+                style={{
+                  color: VinoColors.subtleText,
+                  textAlign: "center",
+                  marginTop: 5,
+                }}
+              >
                 Attempted for: {hospital.address}, {hospital.region}
               </Text>
             )}
@@ -214,81 +215,109 @@ export default function HospitalDetailScreen() {
               }}
               title={hospital?.name}
               description={hospital?.address}
+              pinColor={VinoColors.primary} // Use primary color for map marker
             />
           </MapView>
         )}
         {!loadingMap && mapRegion && (
           <View style={styles.buttonContainer}>
-            <Button title="Open in Maps App" onPress={openMapInExternalApp} />
+            <Button
+              title="Open in Maps App"
+              onPress={openMapInExternalApp}
+              color={VinoColors.primary}
+            />
           </View>
         )}
+        {/* Placeholder for extra space at the bottom */}
+        <View style={{ height: 20 }} />
       </ScrollView>
     </>
   );
 }
 
-// ... (styles from your original DetailScreen.js, plus centerContainer if needed)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: VinoColors.background,
   },
   detailSection: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    backgroundColor: VinoColors.cardBackground, // Card-like background for details
+    margin: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   name: {
-    fontSize: 24,
+    fontSize: 26, // Larger name
     fontWeight: "bold",
     marginBottom: 15,
-    color: "#333",
+    color: VinoColors.primary,
+    textAlign: "center", // Center align name
   },
   label: {
     fontSize: 14,
-    color: "#555",
-    marginTop: 10,
+    color: VinoColors.subtleText,
+    marginTop: 12,
     fontWeight: "600",
   },
   value: {
     fontSize: 16,
-    color: "#333",
+    color: VinoColors.text,
     marginBottom: 5,
+    lineHeight: 22, // Better readability
   },
   phoneLink: {
-    color: "#007AFF",
+    color: VinoColors.accent, // Use accent for links
     textDecorationLine: "underline",
   },
   mapPlaceholder: {
-    minHeight: 200, // Give it some space even with error text
+    minHeight: 250,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f0f0",
-    margin: 20,
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: VinoColors.background, // Lighter placeholder
+    marginHorizontal: 16,
+    marginTop: 0, // Closer to details section
+    marginBottom: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: VinoColors.separator,
+    padding: 15,
   },
   map: {
     height: 300,
-    marginHorizontal: Platform.OS === "ios" ? 0 : 20,
-    marginTop: 20,
-    marginBottom: Platform.OS === "ios" ? 0 : 20,
-    borderRadius: Platform.OS === "ios" ? 0 : 8,
+    marginHorizontal: 16,
+    marginTop: 0,
+    marginBottom: 16,
+    borderRadius: 12, // Rounded map
+    overflow: "hidden", // Ensures border radius is applied
   },
-  errorText: {
-    color: "red",
+  mapErrorText: {
+    // Renamed from errorText to avoid conflict
+    color: VinoColors.primary,
     textAlign: "center",
     paddingHorizontal: 10,
+    fontSize: 15,
   },
   buttonContainer: {
-    marginVertical: 15,
-    marginHorizontal: 20,
+    marginVertical: 10, // Reduced vertical margin
+    marginHorizontal: 16,
+    borderRadius: 25, // Rounded button container for a single button
+    overflow: "hidden", // To make Button's color prop respect borderRadius on Android
   },
   centerContainer: {
-    // For initial loading
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    backgroundColor: VinoColors.background,
+  },
+  errorText: {
+    color: VinoColors.primary, // Use primary color for error text or specific errorText color
+    fontSize: 16,
+    textAlign: "center",
   },
 });

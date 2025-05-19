@@ -1,45 +1,39 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
-
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
+import React from "react";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { Tabs } from "expo-router";
+import { VinoColors } from "../../constants/Colors";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
+        tabBarActiveTintColor: VinoColors.primary,
+        tabBarInactiveTintColor: VinoColors.tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: VinoColors.tabBarBackground,
+          borderTopColor: VinoColors.separator,
+        },
+        headerStyle: { backgroundColor: VinoColors.primary }, // Default header style for tab screens
+        headerTintColor: VinoColors.headerText,
+        headerTitleStyle: { fontWeight: "bold" },
+      }}
+    >
       <Tabs.Screen
-        name="index"
+        name="index" 
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Vino App",
+          tabBarIcon: ({ color, focused }) => (
+            <FontAwesome
+              size={26} // Slightly adjusted size
+              name="hospital-o"
+              color={
+                focused ? VinoColors.tabIconSelected : VinoColors.tabIconDefault
+              }
+            />
+          ),
         }}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+      {}
     </Tabs>
   );
 }
